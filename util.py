@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib as mpl
 import os
 from matplotlib import pyplot
+import cv2
+import pandas as pd
+from sklearn.cluster import KMeans 
+
 
 def findClosestCentroids(X, centroids):
    
@@ -81,3 +85,30 @@ def kMeansInitCentroids(X, K):
         centroid[i] = X[i] # simply initializing first k training examples as centroids
 
     return centroid
+
+def img_color_pallete(original_image, k=8):
+    img=resizing(original_image)
+    img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+    w, h, d = original_shape = tuple(img.shape)
+    image_array = np.reshape(img, (w * h, d))
+    kmeans = KMeans(n_clusters=k).fit(image_array)
+    labels = kmeans.predict(image_array)
+    df=pd.DataFrame({"labels":labels})
+    label_orders=df['labels'].value_counts().to_dict()
+    center_colors = list(kmeans.cluster_centers_)
+    colors_ordering=[center_colors[i]/255 for i in label_orders.keys()]
+    color_labels = [rgbtohex(colors_ordering[i]*255) for i in label_orders.keys()]
+    return img,label_orders,colors_ordering,color_labels
+
+def rgbtohex(rgb):
+    return "#{:02x}{:02x}{:02x}".format(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+
+
+def resizing(img):
+    src = cv2.imread(img, cv2.IMREAD_UNCHANGED)
+    width=int(src.shape[1]) 
+    height = int(src.shape[0])
+    if width>500 or height>500:
+        return cv2.resize(src,(500,500))
+    return src
+
